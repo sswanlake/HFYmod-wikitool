@@ -36,7 +36,7 @@
         this.css("border", "1px solid #888");
         this.css("width", "80%");
         this.css("overflow-y", "initial");
-	    return this;
+        return this;
     };//css modal-content
 
     $(document).ready(function(){
@@ -44,7 +44,6 @@
         var author = $(".author")[12].innerHTML; //the 12 means it's the array=12 instance of the class "author". 0=you, 1=adam_wizzy, 2-11=mods, 12=author, 13=first commenter, etc.
 
         var Btn = $('<button id="myBtn" title="Display the author\'s submissions to HFY as part of a wikipage template">Wiki Template</button>');
-//                    <p><span id="totalSubmissions">${totalSubmissions}</span> total submission, <span id="storyCount">${storyCount}</span> of which are in HFY</p>
         var BtnContent = $(`
             <div id="myModal" class="modal" style="font-size: 120%;" >
                 <div class="modal-content">
@@ -67,6 +66,11 @@
                     <hr/>
 
                     <p>Don't forget to give editing permission to the user, send a message, and list the page on <a href="${baseDomain}/r/hfy/wiki/authors)" target="_blank">All Authors</a></p>
+                    <hr/>
+                    <p>Other submissions:</p>
+                    <div class="otherposts" style="border:1px solid gray; font-size: 90%; background:lightgray;">
+                        <p><span id="otherposts"></span></p>
+                    </div>
                 </div>
             </div>
         `);
@@ -92,6 +96,18 @@
             $('body').css("overflow", "auto");
         };
 
+        //making dates human readable
+        function timeConvert(UNIX_timestamp) {
+            var a = new Date(UNIX_timestamp * 1000);
+            var year = a.getFullYear();
+            var month = (`0${a.getUTCMonth() + 1}`).slice(-2);
+            var date = (`0${a.getUTCDate()}`).slice(-2);
+            var hour = (`0${a.getUTCHours()}`).slice(-2);
+            var min = (`0${a.getUTCMinutes()}`).slice(-2);
+            var sec = (`0${a.getUTCSeconds()}`).slice(-2);
+            return `${date}-${month}-${year} ${hour}:${min}:${sec}`;
+         }
+
         //getting the json with the information
         var lastID = null;
         var totalSubmissions;
@@ -108,19 +124,22 @@
                 var children = data.data.children;
                 $.each(children, function (i, post) {
                     if (post.data.subreddit == "HFY"){
-                            $("#stories").prepend( `<p>* [<a href="${post.data.url}">` + post.data.title + `</a>](` + post.data.url + `)</p>\n` );
-//                            storyCount ++;
+                        date = timeConvert(post.data.created_utc);
+                        if (post.data.link_flair_css_class == ("META" || "Text" || "Misc" || "Video")){
+                            $("#otherposts").prepend( `<p>* <a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a></p>\n` );
+                        } else {
+                            $("#stories").prepend( `<p>* [<a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>](` + post.data.url + `)</p>\n` );
                         }
+                    }
                 });
                 if (children && children.length > 0) {
-                    lastID = children[children.length - 1].data.id;
-//                    totalSubmissions = children.length;
+                    lastID = children[children.length - 1].data.name;
                 } else {
                     lastID = null;
                 }
             })
             .error(function() { $("#stories").append( `ERROR ... Shadowbanned?`); });
-        }
+        } //end load
 
         lastID = load(lastID);
 //        $('#totalSubmissions').innerHTML = totalSubmissions;
@@ -128,7 +147,7 @@
 
         $('#afterBtn').click(function () {
             if (lastID) {
-                load('t3_' + lastID);
+                load(lastID);
             }
         });
 
