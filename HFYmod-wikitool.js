@@ -1,13 +1,11 @@
 // ==UserScript==
-// @name         BadReadrScript
+// @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
 // @version      1.0.8
-// @description  Makes reading texts on reddit esier. Hopefully.
-// @author       /u/GamingWolfie
+// @description  A tool for Reddit's r/HFY wiki Mods 
+// @author       /u/sswanlake
 // @match        *.reddit.com/r/*/comments/*
-// @updateURL    https://raw.githubusercontent.com/GamingWolf/BadReadrScript/master/BadReadrScript.user.js
-// @license      MIT; https://opensource.org/licenses/MIT
-// @grant        none
+// @updateURL    https://github.com/sswanlake/HFYmod-wikitool/blob/master/HFYmod-wikitool.js
 // ==/UserScript==
 
 (function() {
