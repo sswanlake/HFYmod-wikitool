@@ -16,7 +16,6 @@
     jQuery.fn.modal = function () {
         this.css("display","none");
         this.css("position", "fixed");
-        this.css("z-index", "1");
         this.css("padding-top", "100px");
         this.css("padding-bottom", "100px");
         this.css("left", "0");
@@ -51,7 +50,7 @@
                     <h1 style="font-size: 200%" id="username"><a href="${baseDomain}/user/${author}" target="_blank">/u/${author}</a></h1>
                     <p><button id="afterBtn" title="wowza! that\'s a lot of stories to just be getting a wiki page now...">load</button> <-if the user has more than 100 stories you need to click this to get the rest to load...</p>
                     <hr/>
-                    <h1><strong>Wiki:</strong> * [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)</h1>
+                    <h1><strong>WIKI:</strong> * [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)</h1>
                     <h1><strong>WIKI MARKDOWN:</strong></h1>
                     <div class="authorpage" style="border:1px solid gray; font-size: 90%; background:lightgray;">
                         <p>**${author}**</p>
