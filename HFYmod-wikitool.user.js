@@ -114,13 +114,7 @@
         var storyCount;
 
         function load(after) {
-            var params = {
-                'after': after,
-                'sort': 'new',
-                'limit': 100
-            };
-
-            $.getJSON(`${baseDomain}/user/${author}/submitted.json`, params, function (data) {
+            $.getJSON(`${baseDomain}/user/${author}/submitted.json?sort=new&count=100&after=${after}`, function (data) {
                 var children = data.data.children;
                 $.each(children, function (i, post) {
                     if (post.data.subreddit == "HFY"){
