@@ -30,6 +30,7 @@
 
     jQuery.fn.modalContent = function () {
         this.css("background-color", "#fefefe");
+	this.css("color", "#000000");
         this.css("margin", "auto");
         this.css("padding", "15px");
         this.css("border", "1px solid #888");
