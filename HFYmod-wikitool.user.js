@@ -111,9 +111,9 @@
         var lastID = null;
         var totalSubmissions;
         var storyCount;
-
+//&count=100
         function load(after) {
-            $.getJSON(`${baseDomain}/user/${author}/submitted.json?sort=new&count=100&after=${after}`, function (data) {
+            $.getJSON(`${baseDomain}/user/${author}/submitted.json?sort=new&after=${after}`, function (data) {
                 var children = data.data.children;
                 $.each(children, function (i, post) {
                     if (post.data.subreddit == "HFY"){
