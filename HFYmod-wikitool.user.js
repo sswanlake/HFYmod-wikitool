@@ -5,7 +5,7 @@
 // @description  A tool for Reddit's r/HFY wiki Mods 
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/*/comments/*
-// @updateURL    https://github.com/sswanlake/HFYmod-wikitool/blob/master/HFYmod-wikitool.js
+// @updateURL    https://github.com/sswanlake/HFYmod-wikitool/raw/master/HFYmod-wikitool.user.js
 // @grant        none
 // ==/UserScript==
 
@@ -77,7 +77,6 @@
 
         //add in the button and it's contents
         $(".expando").prepend(Btn);
-//        $("#siteTable .entry > ul").append( `<li> ` + Btn + ` </li>` ); // the object isn't showing up, for some reason... dunno
         $("body").append(BtnContent);
 
         // format css elements
@@ -87,13 +86,13 @@
         // When the user clicks the button, open the modal
         $("#myBtn").click(function() {
 	        $(".modal").css("display","block");
-            $('body').css("overflow", "hidden");
+                $('body').css("overflow", "hidden");
 	    });
 
         // When the user clicks on <span> (x), close the modal
         $('.close')[0].onclick = function() {
             $('.modal').css("display","none");
-            $('body').css("overflow", "auto");
+            $('body').css("overflow","auto");
         };
 
         //making dates human readable
@@ -136,8 +135,6 @@
         } //end load
 
         lastID = load(lastID);
-//        $('#totalSubmissions').innerHTML = totalSubmissions;
-//        $('#storyCount').innerHTML = storyCount;
 
         $('#afterBtn').click(function () {
             if (lastID) {
