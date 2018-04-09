@@ -4,14 +4,13 @@
 // @version      0.1
 // @description  A tool for Reddit's r/HFY wiki Mods 
 // @author       /u/sswanlake
-// @match        *.reddit.com/r/*/comments/*
+// @match        *.reddit.com/r/HFY/comments/*
 // @updateURL    https://github.com/sswanlake/HFYmod-wikitool/raw/master/HFYmod-wikitool.user.js
 // @grant        none
 // ==/UserScript==
 
 (function() {
 	'use strict';
-
 
     jQuery.fn.modal = function () {
         this.css("display","none");
@@ -53,11 +52,14 @@
                     <hr/>
                     <h1><strong>WIKI:</strong> * [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)</h1>
                     <h1><strong>WIKI MARKDOWN:</strong></h1>
-                    <div class="authorpage" style="border:1px solid gray; font-size: 90%; background:lightgray;">
+                    <div class="authorpage" style="border:1px solid gray; background:lightgray; height:200px; overflow-y:auto; overflow-x:auto;">
                         <p>**${author}**</p>
                         <p>&nbsp;</p>
                         <p>##**One Shots**</p>
-                        <span id="stories"></span>
+                        <pre><span id="stories"></span></pre>
+                        <br/>
+                        <p>##**Series**</p>
+                        <p>####[SERIES](/r/hfy/wiki/series/SERIES)</p>
                         <br/>
                         <p>&amp;nbsp;</p>
                         <p>---</p>
@@ -68,8 +70,8 @@
                     <p>Don't forget to give editing permission to the user, send a message, and list the page on <a href="${baseDomain}/r/hfy/wiki/authors)" target="_blank">All Authors</a></p>
                     <hr/>
                     <p>Other submissions:</p>
-                    <div class="otherposts" style="border:1px solid gray; font-size: 90%; background:lightgray;">
-                        <p><span id="otherposts"></span></p>
+                    <div class="otherposts" style="border:1px solid gray; background:lightgray; overflow-x:auto;">
+                        <p><pre><span id="otherposts"></span></pre></p>
                     </div>
                 </div>
             </div>
@@ -119,9 +121,9 @@
                     if (post.data.subreddit == "HFY"){
                         date = timeConvert(post.data.created_utc);
                         if (post.data.link_flair_css_class == ("META" || "Text" || "Misc" || "Video")){
-                            $("#otherposts").prepend( `<p>* <a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a></p>\n` );
+                            $("#otherposts").prepend( `* <a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n` );
                         } else {
-                            $("#stories").prepend( `<p>* [<a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>](` + post.data.url + `)</p>\n` );
+                            $("#stories").prepend( `* [<a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>](` + post.data.url + `)\n` );
                         }
                     }
                 });
