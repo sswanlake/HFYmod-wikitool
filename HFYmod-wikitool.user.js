@@ -38,6 +38,17 @@
         return this;
     };//css modal-content
 
+    function timeConvert(UNIX_timestamp) {
+        var a = new Date(UNIX_timestamp * 1000);
+        var year = a.getFullYear();
+        var month = (`0${a.getUTCMonth() + 1}`).slice(-2);
+        var date = (`0${a.getUTCDate()}`).slice(-2);
+        var hour = (`0${a.getUTCHours()}`).slice(-2);
+        var min = (`0${a.getUTCMinutes()}`).slice(-2);
+        var sec = (`0${a.getUTCSeconds()}`).slice(-2);
+        return `${month}-${date}-${year} ${hour}:${min}:${sec}`;
+    }//make dates human readable
+
     $(document).ready(function(){
         var baseDomain = (window.location.hostname == 'mod.reddit.com' ? 'https://www.reddit.com' :  `https://${window.location.hostname}`);
         var author = $(".author")[12].innerHTML; //the 12 means it's the array=12 instance of the class "author". 0=you, 1=adam_wizzy, 2-11=mods, 12=author, 13=first commenter, etc.
@@ -48,9 +59,8 @@
                 <div class="modal-content">
                     <span class="close" style="float:right; font-size:28px; font-weight:bold;">&times;</span>
                     <h1 style="font-size: 200%" id="username"><a href="${baseDomain}/user/${author}" target="_blank">/u/${author}</a></h1>
-                    <p><button id="afterBtn" title="wowza! that\'s a lot of stories to just be getting a wiki page now...">load</button> <-if the user has more stories you need to click this to get the rest to load</p>
-                    <p><span id="totalSubmissions"></span> total submissions, <span id="hfycount"></span> of which are in HFY</p>
-                    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount"></span> are stories and <span id="metacount"></span> are other submissions</p>
+                    <p><span id="totalSubmissions" style="color:red"></span> total submissions, <span id="hfycount" style="color:red"></span> of which are in HFY</p>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount" style="color:red"></span> are stories and <span id="metacount" style="color:red"></span> are other submissions</p>
                     <hr/>
                     <h1><strong>WIKI:</strong> <a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">${author}</a></h1>
                     <div class="authorpage" style="border:1px solid gray; background:lightgray; height:200px; overflow-y:auto; overflow-x:auto;">
@@ -105,18 +115,6 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
             $('body').css("overflow","auto");
         };
 
-        //making dates human readable
-        function timeConvert(UNIX_timestamp) {
-            var a = new Date(UNIX_timestamp * 1000);
-            var year = a.getFullYear();
-            var month = (`0${a.getUTCMonth() + 1}`).slice(-2);
-            var date = (`0${a.getUTCDate()}`).slice(-2);
-            var hour = (`0${a.getUTCHours()}`).slice(-2);
-            var min = (`0${a.getUTCMinutes()}`).slice(-2);
-            var sec = (`0${a.getUTCSeconds()}`).slice(-2);
-            return `${date}-${month}-${year} ${hour}:${min}:${sec}`;
-         }
-
         //getting the json with the information
         var lastID = null;
         var totalSubmissions = 0;
@@ -148,20 +146,13 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
                     lastID = children[children.length - 1].data.name;
                     totalSubmissions += children.length;
                     $('#totalSubmissions').html(`${totalSubmissions}`);
-                } else {
-                    lastID = null;
+                    load(lastID);
                 }
             })
             .error(function() { $("#stories").append( `ERROR ... Shadowbanned?`); });
         } //end load
 
         load(lastID);
-
-        $('#afterBtn').click(function () {
-            if (lastID) {
-                load(lastID);
-            }
-        });
 
     });//document ready
 
