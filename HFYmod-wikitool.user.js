@@ -48,10 +48,11 @@
                 <div class="modal-content">
                     <span class="close" style="float:right; font-size:28px; font-weight:bold;">&times;</span>
                     <h1 style="font-size: 200%" id="username"><a href="${baseDomain}/user/${author}" target="_blank">/u/${author}</a></h1>
-                    <p><button id="afterBtn" title="wowza! that\'s a lot of stories to just be getting a wiki page now...">load</button> <-if the user has more than 100 stories you need to click this to get the rest to load...</p>
+                    <p><button id="afterBtn" title="wowza! that\'s a lot of stories to just be getting a wiki page now...">load</button> <-if the user has more stories you need to click this to get the rest to load</p>
+                    <p><span id="totalSubmissions"></span> total submissions, <span id="hfycount"></span> of which are in HFY</p>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount"></span> are stories and <span id="metacount"></span> are other submissions</p>
                     <hr/>
-                    <h1><strong>WIKI:</strong> * [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)</h1>
-                    <h1><strong>WIKI MARKDOWN:</strong></h1>
+                    <h1><strong>WIKI:</strong> <a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">${author}</a></h1>
                     <div class="authorpage" style="border:1px solid gray; background:lightgray; height:200px; overflow-y:auto; overflow-x:auto;">
                         <p>**${author}**</p>
                         <p>&nbsp;</p>
@@ -65,13 +66,20 @@
                         <p>---</p>
                         <p>[All Authors](${baseDomain}/r/hfy/wiki/authors)</p>
                     </div>
-                    <hr/>
-
                     <p>Don't forget to give editing permission to the user, send a message, and list the page on <a href="${baseDomain}/r/hfy/wiki/authors)" target="_blank">All Authors</a></p>
                     <hr/>
                     <p>Other submissions:</p>
                     <div class="otherposts" style="border:1px solid gray; background:lightgray; overflow-x:auto;">
                         <p><pre><span id="otherposts"></span></pre></p>
+                    </div>
+                    <p>&nbsp;</p>
+                    <div style="border:1px solid gray; background:lightgray; overflow-x:auto;">
+                        <pre>You have been added to the wiki. We created the following pages for you.
+&nbsp;
+* [<span id="series">SERIES</span>](/r/hfy/wiki/series/SERIES)\n
+* [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)\n
+You are free to edit your pages as you see fit. We strongly recommend maintaining your own pages. [Here](http://www.reddit.com/r/hfy/wiki/ref/wiki_updating) is a little guide to Wiki updating if you need it. If you start a new series please let us know so that we can create the page. If you have any questions send us a [message](http://www.reddit.com/message/compose?to=%2Fr%2FHFY).\n
+                        </pre>
                     </div>
                 </div>
             </div>
@@ -111,24 +119,35 @@
 
         //getting the json with the information
         var lastID = null;
-        var totalSubmissions;
-        var storyCount;
-//&count=100
-        function load(after) {
+        var totalSubmissions = 0;
+        var hfycount = 0;
+        var storycount = 0;
+        var metacount = 0;
+
+	function load(after) {
             $.getJSON(`${baseDomain}/user/${author}/submitted.json?sort=new&after=${after}`, function (data) {
                 var children = data.data.children;
+                var date;
                 $.each(children, function (i, post) {
                     if (post.data.subreddit == "HFY"){
                         date = timeConvert(post.data.created_utc);
+                        hfycount++;
                         if (post.data.link_flair_css_class == ("META" || "Text" || "Misc" || "Video")){
                             $("#otherposts").prepend( `* <a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n` );
+                            metacount++;
                         } else {
-                            $("#stories").prepend( `* [<a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>](` + post.data.url + `)\n` );
+                            $("#stories").prepend( `* [<a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').trim() + `</a>](` + post.data.url + `)\n` );
+                            storycount++;
                         }
                     }
+                    $('#hfycount').html(`${hfycount}`);
+                    $('#storycount').html(`${storycount}`);
+                    $('#metacount').html(`${metacount}`);
                 });
                 if (children && children.length > 0) {
                     lastID = children[children.length - 1].data.name;
+                    totalSubmissions += children.length;
+                    $('#totalSubmissions').html(`${totalSubmissions}`);
                 } else {
                     lastID = null;
                 }
@@ -136,7 +155,7 @@
             .error(function() { $("#stories").append( `ERROR ... Shadowbanned?`); });
         } //end load
 
-        lastID = load(lastID);
+        load(lastID);
 
         $('#afterBtn').click(function () {
             if (lastID) {
