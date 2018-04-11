@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.5
 // @description  A tool for Reddit's r/HFY wiki Mods 
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
 // @updateURL    https://github.com/sswanlake/HFYmod-wikitool/raw/master/HFYmod-wikitool.user.js
 // @grant        none
 // ==/UserScript==
+
+// what's new: autoloads all stories
 
 (function() {
 	'use strict';
