@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.5.1
 // @description  A tool for Reddit's r/HFY wiki Mods 
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
@@ -9,7 +9,7 @@
 // @grant        none
 // ==/UserScript==
 
-// what's new: autoloads all stories
+// what's new: autoloads all stories, close button cursor pointer
 
 (function() {
 	'use strict';
@@ -59,7 +59,7 @@
         var BtnContent = $(`
             <div id="myModal" class="modal" style="font-size: 120%;" >
                 <div class="modal-content">
-                    <span class="close" style="float:right; font-size:28px; font-weight:bold;">&times;</span>
+                    <span class="close" style="float:right; font-size:28px; font-weight:bold; cursor: pointer;">&times;</span>
                     <h1 style="font-size: 200%" id="username"><a href="${baseDomain}/user/${author}" target="_blank">/u/${author}</a></h1>
                     <p><span id="totalSubmissions" style="color:red"></span> total submissions, <span id="hfycount" style="color:red"></span> of which are in HFY</p>
                     <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount" style="color:red"></span> are stories and <span id="metacount" style="color:red"></span> are other submissions</p>
