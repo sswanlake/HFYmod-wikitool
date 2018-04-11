@@ -136,7 +136,11 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
                             $("#otherposts").prepend( `* <a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n` );
                             metacount++;
                         } else {
-                            $("#stories").prepend( `* [<a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').trim() + `</a>](` + post.data.url + `)\n` );
+                            if (post.data.over_18) {
+                                $("#stories").prepend( `* [<a href="${post.data.url}" title="created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').trim() + `</a>](` + post.data.url + `) <emphasis style="color:red;">*NSFW*</emphasis>\n` );
+                            } else {
+                                $("#stories").prepend( `* [<a href="${post.data.url}" title="created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').trim() + `</a>](` + post.data.url + `)\n` );
+                            }
                             storycount++;
                         }
                     }
