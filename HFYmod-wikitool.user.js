@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.5.2
+// @version      0.5.3
 // @description  A tool for Reddit's r/HFY wiki Mods 
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
@@ -9,7 +9,7 @@
 // @grant        none
 // ==/UserScript==
 
-// what's new: autoloads all stories, close button cursor pointer
+//what's new: correctly? sorts all flairs, creates series link
 
 (function() {
 	'use strict';
@@ -80,18 +80,19 @@
                     </div>
                     <p>Don't forget to give editing permission to the user, send a message, and list the page on <a href="${baseDomain}/r/hfy/wiki/authors)" target="_blank">All Authors</a></p>
                     <hr/>
+                    series name: <input type="text" id="seriesname" value="" /> (hit enter to submit)
+                    <hr/>
                     <p>Other submissions:</p>
-                    <div class="otherposts" style="border:1px solid gray; background:lightgray; overflow-x:auto;">
-                        <p><pre><span id="otherposts"></span></pre></p>
+                    <div class="otherposts" style="border:1px solid gray; background:lightgray; height:250px; overflow-y:auto; overflow-x:auto;">
+                        <pre><span id="otherposts"></span></pre>
                     </div>
                     <p>&nbsp;</p>
                     <div style="border:1px solid gray; background:lightgray; overflow-x:auto;">
-                        <pre>You have been added to the wiki. We created the following pages for you.
+                    <pre>You have been added to the wiki. We created the following pages for you.
 &nbsp;
-* [<span id="series">SERIES</span>](/r/hfy/wiki/series/SERIES)\n
-* [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)\n
+<span id="serieslink"></span>* [${author}](<a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">/r/hfy/wiki/authors/${author.toLowerCase()}</a>)\n
 You are free to edit your pages as you see fit. We strongly recommend maintaining your own pages. [Here](http://www.reddit.com/r/hfy/wiki/ref/wiki_updating) is a little guide to Wiki updating if you need it. If you start a new series please let us know so that we can create the page. If you have any questions send us a [message](http://www.reddit.com/message/compose?to=%2Fr%2FHFY).\n
-                        </pre>
+</pre>
                     </div>
                 </div>
             </div>
@@ -132,14 +133,14 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
                     if (post.data.subreddit == "HFY"){
                         date = timeConvert(post.data.created_utc);
                         hfycount++;
-                        if (post.data.link_flair_css_class == ("META" || "Text" || "Misc" || "Video")){
-                            $("#otherposts").prepend( `* <a href="${post.data.url}" title=" created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n` );
+                        if ((post.data.link_flair_css_class == "META") || (post.data.link_flair_css_class == "Text") || (post.data.link_flair_css_class == "Misc") || (post.data.link_flair_css_class == "Video") || (post.data.link_flair_text == "WP")){
+                            $("#otherposts").prepend( `* <a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n` );
                             metacount++;
                         } else {
                             if (post.data.over_18) {
-                                $("#stories").prepend( `* [<a href="${post.data.url}" title="created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').trim() + `</a>](` + post.data.url + `) <emphasis style="color:red;">*NSFW*</emphasis>\n` );
+                                $("#stories").prepend( `* [<a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').replace(`[PI]`, '').trim() + `</a>](` + post.data.url + `) <emphasis style="color:red;">*NSFW*</emphasis>\n` );
                             } else {
-                                $("#stories").prepend( `* [<a href="${post.data.url}" title="created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').trim() + `</a>](` + post.data.url + `)\n` );
+                                $("#stories").prepend( `* [<a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').replace(`[PI]`, '').trim() + `</a>](` + post.data.url + `)\n` );
                             }
                             storycount++;
                         }
@@ -159,6 +160,21 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
         } //end load
 
         load(lastID);
+
+        // When user enters the series
+        var series;
+        var seriescount;
+        $("#seriesname").keyup(function(e){
+            var code = e.which; // recommended to use e.which, it's normalized across browsers
+            if(code==13)e.preventDefault();
+            if(code==13){ //13=enter
+                series = $(this).val();
+                $(this).val(''); //reset input field
+                $("#series").append( `####[<a href="https://www.reddit.com/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">${series}</a>](/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n <span id="seriesStories"></span>\n` );
+                $("#serieslink").append( `* [${series}](<a href="https://www.reddit.com/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()}</a>)\n <span id="seriesStories"></span>\n` );
+                seriescount++;
+            }
+        }); //end get series name
 
     });//document ready
 
