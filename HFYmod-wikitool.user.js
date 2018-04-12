@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.5.4
+// @version      0.5.4.1
 // @description  A tool for Reddit's r/HFY wiki Mods 
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
@@ -9,7 +9,8 @@
 // @grant        none
 // ==/UserScript==
 
-//what's new: can highlight lines now! also adds empty series template
+//previously: can highlight lines now! also adds empty series template
+//what's new: turns series pretty colors
 
 (function() {
 	'use strict';
@@ -172,9 +173,15 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
             $(".otherposts").css("height", "auto");
         }
 
+	String.prototype.toProperCase = function () { //small function to capitalize the first letter of every word
+            return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+        };
+
         // When user enters the series
         var series;
+        var series_;
         var seriescount = 0;
+        var colors = ["Bisque", "Khaki", "LightGreen", "LightCyan", "LightSteelBlue", "Plum", "GoldenRod", "LightPink", "LightCoral", "LightSalmon"];
         var seriesContent = (`
             <hr/>
             <p>Series no. <span id="series-count">${seriescount}</span></p>
@@ -182,7 +189,7 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
                 <p>[**${author}**](/r/hfy/wiki/authors/${author})</p>
                 <p>&nbsp;</p>
                 <p>##**<span id="series-header">Series</span>**</p>
-                <pre><span id="series"></span></pre>
+                <pre><span id="seriesStories"></span></pre>
                 <p>&nbsp;</p>
                 <p>&amp;nbsp;</p>
                 <p>---</p>
@@ -193,25 +200,26 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
         $("#seriesname").keyup(function(e){
             var code = e.which; // recommended to use e.which, it's normalized across browsers
             if(code==13)e.preventDefault();
-            if(code==13){ //13=enter
-                series = $(this).val(); 
+            if(code==13){ //32=spacebar 13=enter 188=comma 186=semicolon
+                series = $(this).val();
+                series_ = series.toLowerCase().replace(/\s/g, '_').replace(/['!"#$\-%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,""); //the url, to be not case-sensitive
                 $(this).val(''); //reset input field
                 seriescount++;
-                $(".endOfModal").append(seriesContent);
-                $("#series-count").html(`${seriescount}`);
-                $("#author-series").append( `####[<a href="https://www.reddit.com/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">${series}</a>](/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n <span id="seriesStories"></span>\n` );
-                $("#message-serieslink").append( `* [${series}](<a href="https://www.reddit.com/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()}</a>)\n <span id="seriesStories"></span>\n` );
-                $("#series-header").html(`${series}`);
-                $("label:contains('" + series + "')").css("background-color", "yellow");
+                $(".endOfModal").prepend(seriesContent); //for some reason the numbering gets reverse if you append
+                $('#series-count').attr("id", "series-count-" + seriescount).html(`${seriescount}`); //gives each series template a unique id
+                $("#author-series").append( `####[<a href="https://www.reddit.com/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">${series.toProperCase()}</a>](/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n <span id="${seriescount}"></span>\n` );
+                $("#message-serieslink").append( `* [${series.toProperCase()}](<a href="https://www.reddit.com/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">/r/hfy/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()}</a>)\n <span id="${seriescount}"></span>\n` );
+                $("#series-header").html(`${series.toProperCase()}`).css("background-color", colors[(seriescount)%colors.length]);
+                $("label:contains('" + series + "'), label:contains('" + series_ + "')").css("background-color", colors[(seriescount)%colors.length]); //contains series or series_ = no longer case sensitive!
             }
+        }); //end get series
 
         // When the user clicks the button, unhighlight the awkward series maker
         $("#unhighlight").click(function() {
 	        $("label").css("background-color","transparent");
 	    });
-	}); //end get series
+	});
 
     });//document ready
 
 })();
-
