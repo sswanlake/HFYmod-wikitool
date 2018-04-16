@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.5.5.1
+// @version      0.5.6
 // @description  A tool for Reddit's r/HFY wiki Mods
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
@@ -9,8 +9,8 @@
 // @grant        none
 // ==/UserScript==
 
-//previously: sorts series into series template
-//what's new: added ability to hide sections, and length of series
+//previously: added ability to hide sections, and length of series
+//what's new: close modal if user clicks outside, checks if wiki page exists
 
 (function() {
 	'use strict';
@@ -60,7 +60,6 @@
     $(document).ready(function(){
         var baseDomain = (window.location.hostname == 'mod.reddit.com' ? 'https://www.reddit.com' :  `https://${window.location.hostname}`);
         var author = $(".author")[12].innerHTML; //the array=12 instance of the class "author". 0=you, 1=adamwizzy, 2-11=mods, 12=author, 13=first commenter, etc.
-
         var Btn = $('<button id="myBtn" title="Display the author\'s submissions to HFY as part of a wikipage template">Wiki Template</button>');
         var BtnContent = $(`
             <div id="myModal" class="modal" style="font-size: 120%;" >
@@ -70,9 +69,8 @@
                     <p><span id="totalSubmissions" style="color:red"></span> total submissions, <span id="hfycount" style="color:red"></span> of which are in HFY</p>
                     <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount" style="color:red"></span> are stories and <span id="metacount" style="color:red"></span> are other submissions</p>
                     <hr/>
-                    <h1><strong>WIKI:</strong> <a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank">${author}</a></h1>
-                    <a onclick="$('.authorpage').toggle()">hide author</a>
-                    <div class="authorpage" id="authorpage" style="border:1px solid gray; background:Lavender; max-height:250px; overflow-y:auto; overflow-x:auto;">
+                    <p><strong style="font-size: 150%">WIKI:</strong> <a href="${baseDomain}/r/hfy/wiki/authors/${author}" target="_blank" style="font-size: 150%">${author}</a>  &nbsp; &nbsp; <span id="existsYN"></span>  &nbsp; &nbsp; <a onclick="$('.authorpage').toggle()">hide author</a></p>
+                    <div class="authorpage" id="authorpage" style="border:1px solid gray; background:Lavender; height:250px; overflow-y:auto; overflow-x:auto;">
                         <p>**${author}**</p>
                         <p>&nbsp;</p>
                         <p>##**One Shots**</p>
@@ -85,7 +83,7 @@
                         <p>---</p>
                         <p>[All Authors](${baseDomain}/r/hfy/wiki/authors)</p>
                     </div>
-                    <p>Don't forget to give editing permission to the user, send a message, and list the page on <a href="${baseDomain}/r/hfy/wiki/authors" target="_blank">All Authors</a></p>
+                    <p>Don't forget to give editing permission to the user, send a message, and list the page on <a href="${baseDomain}/r/hfy/wiki/authors" target="_blank">All Authors</a> / <a href="${baseDomain}/r/hfy/wiki/series" target="_blank">All Series</a></p>
                     <hr/>
                     series name: <input type="text" id="seriesname" value="" /> (Hit enter to submit)
                     <p>Other submissions:  &nbsp; &nbsp; <a onclick="$('.otherposts').toggle()">hide other</a></p>
@@ -113,19 +111,33 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
         $(".modal").modal();
         $(".modal-content").modalContent();
 
-        // When the user clicks the button, open the modal
         $("#myBtn").click(function() {
 	        $(".modal").css("display","block");
             $('body').css("overflow", "hidden");
-	    });
+	    }); // When the user clicks the button, open the modal
 
-        // When the user clicks on <span> (x), close the modal
         $('.close')[0].onclick = function() {
             $('.modal').css("display","none");
             $('body').css("overflow", "auto");
-        };
+        }; // When the user clicks on <span> (x), close the modal
 
-        //getting the json with the information
+        window.onclick = function(event) {
+            if (event.target == $('.modal')[0]) {
+                $('.modal').css("display","none");
+                $('body').css("overflow", "auto");
+            }
+        }; // close the modal if the user clicks outside the modal content
+
+        function check(author) {
+            $.getJSON(`https://www.reddit.com/r/HFY/wiki/authors/${author}.json`, function (bar) {
+                $("#existsYN").append( `<span style="color:red">It exists - </span> <a href="https://www.reddit.com/r/HFY/wiki/edit/authors/${author}">Edit?</a>`);
+            })
+            .error(function() {
+                    $("#existsYN").append( `<span style="color:red">Does not exist. <a href="https://www.reddit.com/r/HFY/wiki/create/authors/${author}">Create?</a></span> ... `);
+            }); //end error
+        } //end check exists
+
+	//getting the json with the information
         var lastID = null;
         var totalSubmissions = 0;
         var hfycount = 0;
@@ -173,6 +185,7 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
             }); //end error
         } //end load
 
+        check(author);
         load(lastID);
 
         // When user enters the series
