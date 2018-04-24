@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.5.6.5
+// @version      0.6
 // @description  A tool for Reddit's r/HFY wiki Mods
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
@@ -9,8 +9,8 @@
 // @grant        none
 // ==/UserScript==
 
-//previously: close modal if user clicks outside, checks if wiki page exists
-//what's new: only add in "series" section if series input - fixed series author link, added links to message
+//previously: only add in "series" section if series input - fixed series author link, added links to message
+//what's new: full message link, only show "author page" if non-zero story count, fixed spacing, only hide one series page
 
 (function() {
 	'use strict';
@@ -58,9 +58,12 @@
     }; //capitalize first letter of given string
 
     $(document).ready(function(){
-        var baseDomain = (window.location.hostname == 'mod.reddit.com' ? 'https://www.reddit.com' :  `https://${window.location.hostname}`);
+        var baseDomain = (window.location.hostname == 'mod.reddit.com' ? 'https://www.reddit.com' : `https://${window.location.hostname}`);
         var author = $(".author")[12].innerHTML; //the array=12 instance of the class "author". 0=you, 1=adamwizzy, 2-11=mods, 12=author, 13=first commenter, etc.
         var Btn = $('<button id="myBtn" title="Display the author\'s submissions to HFY as part of a wikipage template">Wiki Template</button>');
+        var preface = (`You have been added to the wiki. We created the following pages for you.\n\n`);
+        var postface = (`* [${author}](/r/HFY/wiki/authors/${author.toLowerCase()})\n\nYou are free to edit your pages as you see fit. We strongly recommend maintaining your own pages. [Here](http://www.reddit.com/r/HFY/wiki/ref/wiki_updating) is a little guide to Wiki updating if you need it. If you start a new series please let us know so that we can create the page. If you have any questions send us a [message](http://www.reddit.com/message/compose?to=%2Fr%2FHFY).\n`);
+        var MessageURL = encodeURI(preface + postface); //...encode URI is supposed to make it nicely URL friendly, but doesn't seem to want to play right now... browsers are smart though
         var BtnContent = $(`
             <div id="myModal" class="modal" style="font-size: 120%;" >
                 <div class="modal-content">
@@ -70,19 +73,16 @@
                     <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount" style="color:red"></span> are stories and <span id="metacount" style="color:red"></span> are other submissions</p>
                     <hr/>
                     <p><strong style="font-size: 150%">WIKI:</strong> <a href="${baseDomain}/r/HFY/wiki/authors/${author}" target="_blank" style="font-size: 150%">${author}</a>  &nbsp; &nbsp; <span id="existsYN"></span>  &nbsp; &nbsp; <a onclick="$('.authorpage').toggle()">hide author</a></p>
-                    <div class="authorpage" id="authorpage" style="border:1px solid gray; background:Lavender; height:250px; overflow-y:auto; overflow-x:auto;">
-                        <p>**${author}**</p>
-                        <p>&nbsp;</p>
-                        <p>##**One Shots**</p>
+                    <div class="authorpage" id="authorpage" style="border:1px solid gray; background:Lavender; height:250px; overflow-y:auto; overflow-x:auto;"><p>**${author}**<br><br>
+                        ##**One Shots**</p>
                         <pre><span id="stories"></span></pre>
                         <br/>
                         <span id="serieslabel"></span>
-                        <p>&nbsp;</p>
-                        <p>&amp;nbsp;</p>
-                        <p>---</p>
-                        <p>[All Authors](${baseDomain}/r/HFY/wiki/authors)</p>
+                        &amp;nbsp;<br><br>
+                        ---<br>
+                        [All Authors](${baseDomain}/r/HFY/wiki/authors)</p>
                     </div>
-                    <p>Don't forget to give editing permission to the user, send a <a href="https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki">message</a>, and list the page on <a href="${baseDomain}/r/HFY/wiki/authors" target="_blank">All Authors</a> / <a href="${baseDomain}/r/HFY/wiki/series" target="_blank">All Series</a></p>
+                    <p>Don't forget to give editing permission to the user, send a <a id="message" href="https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki&message=${MessageURL}">message</a>, and list the page on <a href="${baseDomain}/r/HFY/wiki/authors" target="_blank">All Authors</a> / <a href="${baseDomain}/r/HFY/wiki/series" target="_blank">All Series</a></p>
                     <hr/>
                     series name: <input type="text" id="seriesname" value="" /> (Hit enter to submit)
                     <p>Other submissions:  &nbsp; &nbsp; <a onclick="$('.otherposts').toggle()">hide other</a></p>
@@ -90,14 +90,6 @@
                         <pre><span id="otherposts"></span></pre>
                     </div>
                     <p>&nbsp;</p>
-                    <p><a href="https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki">Message</a>: &nbsp; &nbsp; <a onclick="$('.message').toggle()">hide message</a>
-                    <div class="message" style="border:1px solid gray; background:Lavender; overflow-x:auto;">
-                    <pre>You have been added to the wiki. We created the following pages for you.
-&nbsp;
-<span id="message-serieslink"></span>* [${author}](<a href="${baseDomain}/r/HFY/wiki/authors/${author}" target="_blank">/r/HFY/wiki/authors/${author.toLowerCase()}</a>)\n
-You are free to edit your pages as you see fit. We strongly recommend maintaining your own pages. [Here](http://www.reddit.com/r/HFY/wiki/ref/wiki_updating) is a little guide to Wiki updating if you need it. If you start a new series please let us know so that we can create the page. If you have any questions send us a [message](http://www.reddit.com/message/compose?to=%2Fr%2FHFY).\n
-</pre>
-                    </div>
                     <div class="endOfModal">
                     </div>
                 </div>
@@ -174,6 +166,9 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
                     $('#totalSubmissions').html(`${totalSubmissions}`);
                     load(lastID);
                 }
+                if (storycount == 0) {
+                    $('.authorpage').hide();
+                }
             })
             .error(function() {
                 if (author == "[deleted]") {
@@ -190,20 +185,19 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
         // When user enters the series
         var series;
         var series_;
+        var seriesURL = [];
         var seriescount = 0;
         var serieslength;
         var seriesContent = (`
             <hr/>
-            <p>Series no. <span id="series-count" style="color:blue">${seriescount}</span>  has <span id="entrycount" style="color:red"></span> stories  &nbsp; &nbsp; <a onclick="$('.seriespage').toggle()">hide <i>all</i> series pages</a></p>
-            <div class="seriespage" style="border:1px solid gray; background:Lavender; max-height:250px; overflow-y:auto; overflow-x:auto;">
-                <p>[**${author}**](/r/HFY/wiki/authors/${author.toLowerCase()})</p>
-                <p>&nbsp;</p>
-                <p>##**<span id="series-header">Series</span>**</p>
+            <p>Series no. <span id="series-count" style="color:blue">${seriescount}</span>  has <span id="entrycount" style="color:red"></span> stories  &nbsp; &nbsp; <a id="seriesclick" onclick="$('#seriespage').toggle()">hide <i>this</i> series page</a></p>
+            <div id="seriespage" style="border:1px solid gray; background:Lavender; max-height:250px; overflow-y:auto; overflow-x:auto;">
+                [**${author}**](/r/HFY/wiki/authors/${author.toLowerCase()})<br><br>
+                ##**<a id="seriesURL"><span id="series-header">Series</span></a>**</p>
                 <pre><span id="seriesStories"></span></pre>
-                <p>&nbsp;</p>
-                <p>&amp;nbsp;</p>
-                <p>---</p>
-                <p>[All Series](https://www.reddit.com/r/HFY/wiki/series)</p>
+                &amp;nbsp;<br><br>
+                ---<br>
+                [All Series](https://www.reddit.com/r/HFY/wiki/series)</p>
             </div>
         `);
 
@@ -218,11 +212,17 @@ You are free to edit your pages as you see fit. We strongly recommend maintainin
                 if (seriescount == 1) {
                     $("#serieslabel").prepend(`##**Series** \n <pre><span id="author-series"></span></pre>`);
                 }
-                $(".endOfModal").prepend(seriesContent); //for some reason the numbering gets reverse if you append
+                $(".endOfModal").prepend(seriesContent); //for some reason the numbering gets reverse if you append //reason now known, too lazy to fix
                 $('#series-count').attr("id", "series-count-" + seriescount).html(`${seriescount}`); //gives each series template a unique id //$(`span[id*= ${seriescount}]`)
-                $("#author-series").append( `####[<a href="https://www.reddit.com/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">${series.toProperCase()}</a>](/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n <span id="${seriescount}"></span>\n` );
-                $("#message-serieslink").append( `* [${series.toProperCase()}](<a href="https://www.reddit.com/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()}</a>)\n <span id="${seriescount}"></span>\n` );
+                $('#seriespage').attr("id", "seriespage-" + seriescount);
+                $('a#seriesclick').attr("id", "seriesclick-" + seriescount).attr("onclick", `$("#seriespage-" + ${seriescount}).toggle()`);
+                $('a#seriesURL').attr("id", "seriesURL-" + seriescount).attr("href", `https://www.reddit.com/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()}`);
+                $("#author-series").append( `####[<a href="https://www.reddit.com/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">${series.toProperCase()}</a>](/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n` );
                 $("#series-header").html(`${series.toProperCase()}`);
+                seriesURL.push(`* [${series.toProperCase()}](/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n\n`); //add new series to the list
+                MessageURL = encodeURI(preface + seriesURL.join("") + postface);
+                $("a#message").attr("href", `https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki&message=${MessageURL}`);
+
                 $("#stories label:contains('" + series + "'), #stories label:contains('" + series_ + "')").clone().appendTo("#seriesStories"); //contains series or series_, copy them
                 serieslength = $("#stories label:contains('" + series + "'), #stories label:contains('" + series_ + "')").css("display","none").length; //hide the originals and find out how many
                 $("#entrycount").html(`${serieslength}`);
