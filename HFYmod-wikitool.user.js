@@ -9,8 +9,8 @@
 // @grant        none
 // ==/UserScript==
 
-//previously: only add in "series" section if series input - fixed series author link, added links to message
-//what's new: full message link, only show "author page" if non-zero story count, fixed spacing, only hide one series page
+//previously: full message link, only show "author page" if non-zero story count, fixed spacing, only hide one series page
+//what's new: escapes underscores in usernames, displays "exists"/number on button, length of posts, doesn't show mod-removed, select text on click!
 
 (function() {
 	'use strict';
@@ -57,12 +57,32 @@
         return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
     }; //capitalize first letter of given string
 
+    function selectText(element) {
+        var doc = document
+            , text = element
+            , range, selection
+        ;
+        if (doc.body.createTextRange) { //ms
+            range = doc.body.createTextRange();
+            range.moveToElementText(text);
+            range.select();
+        } else if (window.getSelection) { //all others
+            selection = window.getSelection();
+            range = doc.createRange();
+            range.selectNodeContents(text);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    } //function for selecting text in <pre> on click
+
+
     $(document).ready(function(){
         var baseDomain = (window.location.hostname == 'mod.reddit.com' ? 'https://www.reddit.com' : `https://${window.location.hostname}`);
         var author = $(".author")[12].innerHTML; //the array=12 instance of the class "author". 0=you, 1=adamwizzy, 2-11=mods, 12=author, 13=first commenter, etc.
-        var Btn = $('<button id="myBtn" title="Display the author\'s submissions to HFY as part of a wikipage template">Wiki Template</button>');
+
+        var Btn = $('<button id="myBtn" title="Display the author\'s submissions to HFY as part of a wikipage template">Wiki Template <span id="YN"></span></button>');
         var preface = (`You have been added to the wiki. We created the following pages for you.\n\n`);
-        var postface = (`* [${author}](/r/HFY/wiki/authors/${author.toLowerCase()})\n\nYou are free to edit your pages as you see fit. We strongly recommend maintaining your own pages. [Here](http://www.reddit.com/r/HFY/wiki/ref/wiki_updating) is a little guide to Wiki updating if you need it. If you start a new series please let us know so that we can create the page. If you have any questions send us a [message](http://www.reddit.com/message/compose?to=%2Fr%2FHFY).\n`);
+        var postface = (`* [${author.split("_").join("\\_")}](/r/HFY/wiki/authors/${author.toLowerCase()})\n\nYou are free to edit your pages as you see fit. We strongly recommend maintaining your own pages. [Here](http://www.reddit.com/r/HFY/wiki/ref/wiki_updating) is a little guide to Wiki updating if you need it. If you start a new series please let us know so that we can create the page. If you have any questions send us a [message](http://www.reddit.com/message/compose?to=%2Fr%2FHFY).\n`);
         var MessageURL = encodeURI(preface + postface); //...encode URI is supposed to make it nicely URL friendly, but doesn't seem to want to play right now... browsers are smart though
         var BtnContent = $(`
             <div id="myModal" class="modal" style="font-size: 120%;" >
@@ -73,17 +93,19 @@
                     <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of those, <span id="storycount" style="color:red"></span> are stories and <span id="metacount" style="color:red"></span> are other submissions</p>
                     <hr/>
                     <p><strong style="font-size: 150%">WIKI:</strong> <a href="${baseDomain}/r/HFY/wiki/authors/${author}" target="_blank" style="font-size: 150%">${author}</a>  &nbsp; &nbsp; <span id="existsYN"></span>  &nbsp; &nbsp; <a onclick="$('.authorpage').toggle()">hide author</a></p>
-                    <div class="authorpage" id="authorpage" style="border:1px solid gray; background:Lavender; height:250px; overflow-y:auto; overflow-x:auto;"><p>**${author}**<br><br>
-                        ##**One Shots**</p>
-                        <pre><span id="stories"></span></pre>
-                        <br/>
-                        <span id="serieslabel"></span>
-                        &amp;nbsp;<br><br>
-                        ---<br>
-                        [All Authors](${baseDomain}/r/HFY/wiki/authors)</p>
+                    <div class="authorpage" id="authorpage" style="border:1px solid gray; background:Lavender; height:250px; overflow-y:auto; overflow-x:auto;"><pre><p>**${author.split("_").join("\\_")}**<br>
+##**One Shots**
+<span id="stories"></span>
+<span id="serieslabel"></span>
+&amp;nbsp;
+
+---
+[All Authors](https://www.reddit.com/r/HFY/wiki/authors)
+</pre>
                     </div>
-                    <p>Don't forget to give editing permission to the user, send a <a id="message" href="https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki&message=${MessageURL}">message</a>, and list the page on <a href="${baseDomain}/r/HFY/wiki/authors" target="_blank">All Authors</a> / <a href="${baseDomain}/r/HFY/wiki/series" target="_blank">All Series</a></p>
-                    <hr/>
+                    <p>Don't forget to <span style="color:red">give editing permissions</span> to the user, send a <a id="message" href="https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki&message=${MessageURL}" target="_blank">message</a>, and list the page on <a href="https://www.reddit.com/r/HFY/wiki/authors" target="_blank">All Authors</a> / <a href="https://www.reddit.com/r/HFY/wiki/series" target="_blank">All Series</a></p>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;- If repeat series name, format is "[series](series_author) [*author*]" </p>
+<hr/>
                     series name: <input type="text" id="seriesname" value="" /> (Hit enter to submit)
                     <p>Other submissions:  &nbsp; &nbsp; <a onclick="$('.otherposts').toggle()">hide other</a></p>
                     <div class="otherposts" style="border:1px solid gray; background:Lavender; max-height:250px; overflow-y:auto; overflow-x:auto;">
@@ -119,15 +141,6 @@
             }
         }; // close the modal if the user clicks outside the modal content
 
-        function check(author) {
-            $.getJSON(`https://www.reddit.com/r/HFY/wiki/authors/${author}.json`, function (bar) {
-                $("#existsYN").append( `<span style="color:red">It exists - </span> <a href="https://www.reddit.com/r/HFY/wiki/edit/authors/${author}">Edit?</a>`);
-            })
-            .error(function() {
-                    $("#existsYN").append( `<span style="color:red">Does not exist. <a href="https://www.reddit.com/r/HFY/wiki/create/authors/${author}">Create?</a></span> ... `);
-            }); //end error
-        } //end check exists
-
 	//getting the json with the information
         var lastID = null;
         var totalSubmissions = 0;
@@ -144,16 +157,23 @@
                         date = timeConvert(post.data.created_utc);
                         hfycount++;
                         var flair = post.data.link_flair_css_class;
+                        var leng = (post.data.selftext).length;
                         if ((flair == "META") || (flair == "Text") || (flair == "Misc") || (flair == "Video") || (post.data.link_flair_text == "WP")){ //WP needs a special case because reasons. Meta used to be META. Also, there used to be a "meta mod" flair
-                            $("#otherposts").prepend( `<label>* <a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n</label>` );
+                            if ((!post.data.removed) && (!post.data.banned_by)){ //"banned_by" is the older version of "removed" apparently
+                                $("#otherposts").prepend( `<label>* <a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n</label>` );
+                            } else {
+                                $("#otherposts").prepend( `<label>* <a style="color:DarkSlateBlue" href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + post.data.title + `</a>\n</label>` );
+                            };
                             metacount++;
                         } else {
-                            if (post.data.over_18) {
-                                $("#stories").prepend( `<label>* [<a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').replace(`(OC)`, '').replace(`[PI]`, '').trim() + `</a>](` + post.data.url + `) <emphasis style="color:red;">*NSFW*</emphasis>\n</label>` );
-                            } else {
-                                $("#stories").prepend( `<label>* [<a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score}">` + (post.data.title).replace(`[OC]`, '').replace(`(OC)`, '').replace(`[PI]`, '').trim() + `</a>](` + post.data.url + `)\n</label>` );
-                            }
-                            storycount++;
+                            if ((!post.data.removed) && (!post.data.banned_by)){ //"banned_by" is the older version of "removed" apparently
+                                if (post.data.over_18) {
+                                    $("#stories").prepend( `<label>* [<a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score},  pagecount: ${leng/2000}">` + (post.data.title).replace(`[OC]`, '').replace(`(OC)`, '').replace(`[PI]`, '').trim() + `</a>]<span style="color:purple">(` + post.data.url + `)</span> <emphasis style="color:red;">*NSFW*</emphasis>\n</label>` );
+                                } else {
+                                    $("#stories").prepend( `<label>* [<a href="${post.data.url}" title="flair: ${post.data.link_flair_text},  created: ${date},  score: ${post.data.score},  pagecount: ${leng/2000}">` + (post.data.title).replace(`[OC]`, '').replace(`(OC)`, '').replace(`[PI]`, '').trim() + `</a>](` + post.data.url + `)\n</label>` );
+                                }
+                                storycount++;
+                            };
                         }
                     }
                     $('#hfycount').html(`${hfycount}`);
@@ -179,6 +199,17 @@
             }); //end error
         } //end load
 
+        function check(author) {
+            $.getJSON(`https://www.reddit.com/r/HFY/wiki/authors/${author}.json`, function (bar) {
+                $("#existsYN").append( `<span style="color:red">It exists - </span> <a href="https://www.reddit.com/r/HFY/wiki/edit/authors/${author}">Edit?</a>`);
+                $("#YN").html( `- Exists`);
+            })
+            .error(function() {
+                $("#existsYN").append( `<span style="color:red">Does not exist. <a href="https://www.reddit.com/r/HFY/wiki/create/authors/${author}">Create?</a></span> ... `);
+                $("#YN").html( ` - <span style="color:red">${storycount}</span>`);
+            }); //end error
+        } //end check exists
+
         check(author);
         load(lastID);
 
@@ -191,13 +222,16 @@
         var seriesContent = (`
             <hr/>
             <p>Series no. <span id="series-count" style="color:blue">${seriescount}</span>  has <span id="entrycount" style="color:red"></span> stories  &nbsp; &nbsp; <a id="seriesclick" onclick="$('#seriespage').toggle()">hide <i>this</i> series page</a></p>
-            <div id="seriespage" style="border:1px solid gray; background:Lavender; max-height:250px; overflow-y:auto; overflow-x:auto;">
-                [**${author}**](/r/HFY/wiki/authors/${author.toLowerCase()})<br><br>
-                ##**<a id="seriesURL"><span id="series-header">Series</span></a>**</p>
-                <pre><span id="seriesStories"></span></pre>
-                &amp;nbsp;<br><br>
-                ---<br>
-                [All Series](https://www.reddit.com/r/HFY/wiki/series)</p>
+            <div id="seriespage" style="border:1px solid gray; background:Lavender; max-height:250px; overflow-y:auto; overflow-x:auto;"><pre>
+[**${author.split("_").join("\\_")}**](/r/HFY/wiki/authors/${author.toLowerCase()})
+
+##**<a id="seriesURL"><span id="series-header">Series</span></a>**
+<span id="seriesStories"></span>
+&amp;nbsp;
+
+---
+[All Series](https://www.reddit.com/r/HFY/wiki/series)
+</pre>
             </div>
         `);
 
@@ -205,30 +239,38 @@
             var code = e.which; // recommended to use e.which, it's normalized across browsers
             if(code==13)e.preventDefault();
             if(code==13){ //13=enter
-                series = $(this).val(); //$('#storycount').html($('#stories')[0].innerHTML);
+                series = $(this).val().toString(); //$('#storycount').html($('#stories')[0].innerHTML);
                 series_ = series.toLowerCase().replace(/\s/g, '_').replace(/['!"#$\-%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,""); //the url, to be not case-sensitive
+                //
+                //
                 $(this).val(''); //reset input field
                 seriescount++;
                 if (seriescount == 1) {
-                    $("#serieslabel").prepend(`##**Series** \n <pre><span id="author-series"></span></pre>`);
+                    $("#serieslabel").prepend(`##**Series** \n <span id="author-series"></span>`); //add header for series list to Author page
                 }
                 $(".endOfModal").prepend(seriesContent); //for some reason the numbering gets reverse if you append //reason now known, too lazy to fix
                 $('#series-count').attr("id", "series-count-" + seriescount).html(`${seriescount}`); //gives each series template a unique id //$(`span[id*= ${seriescount}]`)
                 $('#seriespage').attr("id", "seriespage-" + seriescount);
-                $('a#seriesclick').attr("id", "seriesclick-" + seriescount).attr("onclick", `$("#seriespage-" + ${seriescount}).toggle()`);
-                $('a#seriesURL').attr("id", "seriesURL-" + seriescount).attr("href", `https://www.reddit.com/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()}`);
-                $("#author-series").append( `####[<a href="https://www.reddit.com/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/['!"#$%&\\'()\*+,\.\/:;<=>?@\[\\\]\^`{|}~']/g,"").toLowerCase()}" target="_blank">${series.toProperCase()}</a>](/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n` );
-                $("#series-header").html(`${series.toProperCase()}`);
-                seriesURL.push(`* [${series.toProperCase()}](/r/HFY/wiki/series/${series.replace(/\s/g, '_').replace(/[.,\/#!?$%\^&\*;:{}=\`~()]/g,"").toLowerCase()})\n\n`); //add new series to the list
-                MessageURL = encodeURI(preface + seriesURL.join("") + postface);
+                $('a#seriesclick').attr("id", "seriesclick-" + seriescount).attr("onclick", `$("#seriespage-" + ${seriescount}).toggle()`); //makes sure it the "Hides" hide the right section
+                $('a#seriesURL').attr("id", "seriesURL-" + seriescount).attr("href", `https://www.reddit.com/r/HFY/wiki/series/${series_}`); //changes URL at the top of Series page
+                $("#author-series").append( `####[<a href="https://www.reddit.com/r/HFY/wiki/series/${series_}" target="_blank">${series.toProperCase()}</a>](/r/HFY/wiki/series/${series_})\n` ); //add this series to the list on the Author page
+                $("#series-header").html(`${series.toProperCase()}`); //names of series on Series Page
+                seriesURL.push(`* [${series.toProperCase()}](/r/HFY/wiki/series/${series_})\n\n`); //add new series to the list for message
+                MessageURL = encodeURIComponent(preface + seriesURL.join("") + postface); //encodeURI
                 $("a#message").attr("href", `https://www.reddit.com/message/compose/?to=${author}&subject=HFY+Wiki&message=${MessageURL}`);
 
                 $("#stories label:contains('" + series + "'), #stories label:contains('" + series_ + "')").clone().appendTo("#seriesStories"); //contains series or series_, copy them
                 serieslength = $("#stories label:contains('" + series + "'), #stories label:contains('" + series_ + "')").css("display","none").length; //hide the originals and find out how many
                 $("#entrycount").html(`${serieslength}`);
             }
+
+            //selecting everything inside each <pre> tag (the good stuff)
+            var preTags = document.getElementsByTagName('pre');
+            for(var i=0;i<preTags.length;i++) {
+                preTags[i].onclick = function() {selectText(this)};
+            }
         }); //end get series
 
-    });//document ready
+    }); //document ready
 
 })();
