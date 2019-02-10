@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HFYmod-wikitool
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  A tool for Reddit's r/HFY wiki Mods
 // @author       /u/sswanlake
 // @match        *.reddit.com/r/HFY/comments/*
