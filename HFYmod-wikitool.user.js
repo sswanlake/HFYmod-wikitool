@@ -124,6 +124,13 @@
         $(".modal").modal();
         $(".modal-content").modalContent();
 
+        //selecting everything inside each <pre> tag (the good stuff)
+        var preTags = document.getElementsByTagName('pre');
+        for(var i=0;i<preTags.length;i++) {
+            preTags[i].onclick = function() {selectText(this)};
+        }
+
+
         $("#myBtn").click(function() {
 	        $(".modal").css("display","block");
             $('body').css("overflow", "hidden");
